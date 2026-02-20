@@ -1,0 +1,22 @@
+{
+    "name": "crypto_risk_report",
+    "description": "Token risk score + liquidity + slippage analysis",
+    "public": true,
+    "price": "0.01",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "tokenAddress": {
+          "type": "string",
+          "description": "Token contract address"
+        },
+        "chain": {
+          "type": "string",
+          "description": "Blockchain network (e.g. ethereum, base)",
+          "default": "ethereum"
+        }
+      },
+      "required": ["tokenAddress"]
+    }
+  }
+  
