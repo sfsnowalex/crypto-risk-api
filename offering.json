@@ -1,23 +1,17 @@
 {
-    "token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    "chain": "ethereum",
-    "dex": {
-        "liquidityUsd": 122034295.1,
-        "priceUsd": 1.0001,
-        "volume24h": 723024.99,
-        "txns24h": {
-            "buys": 8,
-            "sells": 42
-        },
-        "dexId": "curve",
-        "pairAddress": "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7-0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48-0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  "mode": "sanctions",
+  "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "isSanctioned": false,
+  "providers": {
+    "chainalysis": {
+      "provider": "chainalysis",
+      "available": true,
+      "isSanctioned": false
     },
-    "holderConcentrationTop1": null,
-    "tradeUsd": 100,
-    "slippage_estimate": 8.19441108533835e-7,
-    "risk_score": "LOW",
-    "recommendation": "OK",
-    "flags": [
-        "HOLDER_DATA_UNAVAILABLE"
-    ]
+    "trm": {
+      "provider": "trm",
+      "available": true,
+      "isSanctioned": false
+    }
+  }
 }
