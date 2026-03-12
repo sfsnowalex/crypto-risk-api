@@ -142,6 +142,130 @@ function computeRisk(liquidityUsd, holderConc) {
 }
 
 /* ===============================
+   제재 스크리닝
+================================ */
+
+function getTrimmedString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function buildTrmHeaders() {
+  const apiKey = getTrimmedString(process.env.TRM_SANCTIONS_API_KEY);
+  const headerName =
+    getTrimmedString(process.env.TRM_SANCTIONS_API_KEY_HEADER) || "x-api-key";
+
+  const headers = { "Content-Type": "application/json" };
+  if (apiKey) {
+    headers[headerName] = apiKey;
+  }
+
+  const authScheme = getTrimmedString(process.env.TRM_SANCTIONS_AUTH_SCHEME);
+  if (apiKey && authScheme) {
+    headers.Authorization = `${authScheme} ${apiKey}`;
+  }
+
+  return headers;
+}
+
+async function fetchChainalysisSanctions(address) {
+  const apiKey = getTrimmedString(process.env.CHAINALYSIS_SANCTIONS_API_KEY);
+  const baseUrl =
+    getTrimmedString(process.env.CHAINALYSIS_SANCTIONS_BASE_URL) ||
+    "https://public.chainalysis.com";
+
+  if (!apiKey) {
+    return {
+      provider: "chainalysis",
+      available: false,
+      error: "missing_api_key"
+    };
+  }
+
+  const encodedAddress = encodeURIComponent(address);
+  const url = `${baseUrl}/api/v1/address/${encodedAddress}`;
+
+  try {
+    const resp = await axios.get(url, {
+      timeout: 8000,
+      headers: {
+        "X-API-Key": apiKey
+      }
+    });
+
+    const identifications = Array.isArray(resp.data?.identifications)
+      ? resp.data.identifications
+      : [];
+
+    return {
+      provider: "chainalysis",
+      available: true,
+      isSanctioned: identifications.length > 0,
+      matches: identifications,
+      raw: resp.data
+    };
+  } catch (e) {
+    const status = e.response?.status || null;
+    const message =
+      e.response?.data?.error ||
+      e.response?.data?.message ||
+      e.message ||
+      "request_failed";
+
+    console.error("Chainalysis sanctions error:", message);
+    return {
+      provider: "chainalysis",
+      available: false,
+      status,
+      error: message
+    };
+  }
+}
+
+async function fetchTrmSanctions(address) {
+  const baseUrl =
+    getTrimmedString(process.env.TRM_SANCTIONS_BASE_URL) ||
+    "https://api.trmlabs.com";
+  const url = `${baseUrl}/public/v1/sanctions/screening`;
+
+  try {
+    const resp = await axios.post(
+      url,
+      [{ address }],
+      {
+        timeout: 8000,
+        headers: buildTrmHeaders()
+      }
+    );
+
+    const results = Array.isArray(resp.data) ? resp.data : [];
+    const match = results.find(item => item?.address === address) || results[0] || null;
+
+    return {
+      provider: "trm",
+      available: true,
+      isSanctioned: Boolean(match?.isSanctioned),
+      matches: results,
+      raw: resp.data
+    };
+  } catch (e) {
+    const status = e.response?.status || null;
+    const message =
+      e.response?.data?.error ||
+      e.response?.data?.message ||
+      e.message ||
+      "request_failed";
+
+    console.error("TRM sanctions error:", message);
+    return {
+      provider: "trm",
+      available: false,
+      status,
+      error: message
+    };
+  }
+}
+
+/* ===============================
    API 엔드포인트
 ================================ */
 
@@ -182,6 +306,37 @@ app.post("/api/risk", async (req, res) => {
 
   } catch (e) {
     console.error("RISK ERROR:", e);
+    return res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.post("/api/sanctions", async (req, res) => {
+  try {
+    const address = getTrimmedString(req.body?.address);
+
+    if (!address) {
+      return res.status(400).json({ error: "Invalid address" });
+    }
+
+    const [chainalysis, trm] = await Promise.all([
+      fetchChainalysisSanctions(address),
+      fetchTrmSanctions(address)
+    ]);
+
+    const isSanctioned = Boolean(
+      chainalysis.isSanctioned || trm.isSanctioned
+    );
+
+    return res.json({
+      address,
+      isSanctioned,
+      providers: {
+        chainalysis,
+        trm
+      }
+    });
+  } catch (e) {
+    console.error("SANCTIONS ERROR:", e);
     return res.status(500).json({ error: "internal_error" });
   }
 });
