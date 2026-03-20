@@ -26,12 +26,10 @@
   "isSanctioned": false,
   "providers": {
     "chainalysis": {
-      "provider": "chainalysis",
       "available": true,
       "isSanctioned": false
     },
     "trm": {
-      "provider": "trm",
       "available": true,
       "isSanctioned": false
     }

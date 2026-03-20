@@ -199,9 +199,7 @@ async function fetchChainalysisSanctions(address) {
     return {
       provider: "chainalysis",
       available: true,
-      isSanctioned: identifications.length > 0,
-      matches: identifications,
-      raw: resp.data
+      isSanctioned: identifications.length > 0
     };
   } catch (e) {
     const status = e.response?.status || null;
@@ -243,9 +241,7 @@ async function fetchTrmSanctions(address) {
     return {
       provider: "trm",
       available: true,
-      isSanctioned: Boolean(match?.isSanctioned),
-      matches: results,
-      raw: resp.data
+      isSanctioned: Boolean(match?.isSanctioned)
     };
   } catch (e) {
     const status = e.response?.status || null;

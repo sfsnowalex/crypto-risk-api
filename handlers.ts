@@ -1,5 +1,24 @@
 import fetch from "node-fetch";
 
+function simplifySanctionsResult(data) {
+  return {
+    address: data.address,
+    isSanctioned: Boolean(data.isSanctioned),
+    providers: {
+      chainalysis: {
+        available: Boolean(data.providers?.chainalysis?.available),
+        isSanctioned: Boolean(data.providers?.chainalysis?.isSanctioned),
+        error: data.providers?.chainalysis?.error || null
+      },
+      trm: {
+        available: Boolean(data.providers?.trm?.available),
+        isSanctioned: Boolean(data.providers?.trm?.isSanctioned),
+        error: data.providers?.trm?.error || null
+      }
+    }
+  };
+}
+
 // 요구사항 검증 (필수 값 체크)
 export function validateRequirements({ requirements }) {
   const { address, tokenAddress } = requirements;
@@ -49,7 +68,7 @@ export async function executeJob({ requirements }) {
   return {
     result: {
       mode,
-      ...data
+      ...(mode === "sanctions" ? simplifySanctionsResult(data) : data)
     }
   };
 }
